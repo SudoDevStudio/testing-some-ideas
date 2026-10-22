@@ -14,6 +14,21 @@ Open **http://localhost:3000** (or `http://YOUR-LAN-IP:3000`) for the built-in l
 
 The reader shows the latest 500 logs in the selected period; search and filters apply to those loaded records. In Compose it reads persistent logs from Loki. When running Node alone, it shows the latest 500 logs from the current server session. Viewing and polling the reader do not generate application request logs. The reader is available without authentication to devices that can reach the API on your trusted LAN, and shows the same application logs and error details you would see in Grafana.
 
+## Push an error event
+
+Open **http://localhost:3000/push-event** or click **Push event** in the reader. The page previews errors from the last five minutes. Enter an HTTP/HTTPS destination URL, optionally add headers as a JSON object, and click **Send event** to make a server-side POST.
+
+```json
+{
+  "Authorization": "Bearer your-token",
+  "X-API-Key": "your-key"
+}
+```
+
+The JSON event contains the time window, error counts by HTTP status and endpoint, average error response time, and error log records with timestamps, messages, request IDs, and stacks. It sends the exact preview shown; use **Refresh** to include newer errors. Collection may lag a few seconds behind requests. The preview expires in ten minutes and can only be sent once after the destination responds. Destination status and up to 4 KiB of response text are shown. Redirects are not followed and failed deliveries are not retried automatically.
+
+Headers are held in the form and used only for the send; destination URLs and headers are excluded from application request logs. Up to 1,000 errors are included, with an explicit truncation flag if the window exceeds this limit. With Node alone, coverage is limited to the current session's 500-log buffer; Compose reads stored errors from Loki. An empty window can be sent as a zero-error event. LAN receivers must be reachable from the API container: `localhost` refers to that container; for a receiver on the Docker Desktop host use `http://host.docker.internal:PORT/path`, or use its reachable LAN IP.
+
 ## Run everything
 
 Install Docker with the Compose plugin, then from this directory:

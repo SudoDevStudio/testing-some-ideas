@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Push event · Log reader</title>
+  <link rel="stylesheet" href="/logs/style.css"><link rel="stylesheet" href="/push-event/style.css">
+  <script src="/push-event/form.js" defer></script>
+</head>
+<body>
+  <aside class="rail" aria-label="Application"><a class="brand" href="/" title="Log reader">l<span>o</span>g<span class="brand-dot">.</span></a><a class="rail-icon" href="/" aria-label="Back to logs">≡</a><span class="rail-bottom">LAN</span></aside>
+  <main>
+    <header><div><div class="eyebrow">SHARE A SNAPSHOT</div><h1>Push event<span class="service">Last 5 minutes</span></h1></div><a class="secondary" href="/">← Back to logs</a></header>
+    <p class="intro">Send recent application errors to your webhook or API. Review the payload, enter a destination, and send it once.</p>
+    <div class="push-layout">
+      <section class="push-card"><h2>Destination</h2><p class="subtle">The request is sent from your server as JSON.</p>
+        <form id="push-form" method="post" action="/push-event" autocomplete="off">
+          <label for="destination">POST URL</label>
+          <input id="destination" name="url" type="url" required placeholder="https://your-service.example/events" autocomplete="off" spellcheck="false">
+          <label for="headers">Headers <span class="optional">optional · JSON object</span></label>
+          <textarea id="headers" name="headers" rows="7" autocomplete="off" spellcheck="false" placeholder='{"Authorization": "Bearer your-token", "X-API-Key": "your-key"}'>{}</textarea>
+          <p class="field-help">Content-Type defaults to application/json. Headers are used for this send and aren’t saved.</p>
+          <p id="form-error" class="connection-error" role="alert" hidden></p>
+          <button id="send" class="send-button" type="submit" disabled>Send event →</button>
+        </form>
+        <div id="send-result" class="send-result" role="status" hidden></div>
+        <section id="response-section" hidden><h3>Destination response</h3><pre id="destination-response"></pre></section>
+      </section>
+      <section class="push-card preview-card"><div class="preview-heading"><div><h2>Payload preview</h2><p class="subtle" id="preview-window">Loading recent errors…</p></div><button id="reload-preview" class="secondary" type="button">↻ Refresh</button></div>
+        <div class="event-stats"><div><span>ERRORS</span><strong id="preview-count">—</strong></div><div><span>HTTP 500</span><strong id="preview-500">—</strong></div><div><span>HTTP 503</span><strong id="preview-503">—</strong></div></div>
+        <p id="preview-error" class="connection-error" role="alert" hidden></p>
+        <p id="coverage-note" class="notice" hidden></p>
+        <p class="field-help">This exact snapshot will be sent, including request IDs and error stacks. Refresh to capture newer errors. A preview is valid for 10 minutes.</p>
+        <pre id="payload" tabindex="0" aria-label="JSON event payload">Loading…</pre>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

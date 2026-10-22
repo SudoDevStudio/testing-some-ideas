@@ -2,12 +2,16 @@ import { createServer } from 'node:http';
 import { randomInt, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createLogReader } from './log-reader.js';
+import { createEventPusher, PushEventError, readJsonRequest } from './push-event.js';
 
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/logs', ['index.html', 'text/html; charset=utf-8']],
   ['/logs/style.css', ['style.css', 'text/css; charset=utf-8']],
   ['/logs/reader.js', ['reader.js', 'text/javascript; charset=utf-8']],
+  ['/push-event', ['push-event.html', 'text/html; charset=utf-8']],
+  ['/push-event/form.js', ['push-event.js', 'text/javascript; charset=utf-8']],
+  ['/push-event/style.css', ['push-event.css', 'text/css; charset=utf-8']],
 ].map(([path, [file, type]]) => [path, { content: readFileSync(new URL(`./public/${file}`, import.meta.url)), type }]));
 
 const pick = (items) => items[randomInt(items.length)];
@@ -25,7 +29,8 @@ class HttpError extends Error {
   }
 }
 
-export function createApp({ log = () => {}, readLogs = createLogReader() } = {}) {
+export function createApp({ log = () => {}, readLogs = createLogReader(), sendRequest } = {}) {
+  const pusher = createEventPusher({ readLogs, sendRequest });
   return createServer(async (req, res) => {
     const started = performance.now();
     const requestId = randomUUID();
@@ -51,7 +56,20 @@ export function createApp({ log = () => {}, readLogs = createLogReader() } = {})
     try {
       const url = new URL(req.url, 'http://localhost');
       path = url.pathname;
-      readerRequest = assets.has(path) || path === '/logs/data';
+      readerRequest = assets.has(path) || path === '/logs/data' || path === '/push-event/preview';
+      if ((path === '/push-event' && req.method === 'POST') || path === '/push-event/preview') {
+        readerRequest = true;
+        if (path === '/push-event/preview' && req.method !== 'GET') {
+          res.setHeader('Allow', 'GET');
+          throw new HttpError(405, 'Only GET is supported');
+        }
+        try {
+          res.end(JSON.stringify(path === '/push-event/preview' ? await pusher.preview() : await pusher.send(await readJsonRequest(req))));
+        } catch (error) {
+          throw new HttpError(error instanceof PushEventError ? error.status : 503, error instanceof PushEventError ? error.message : 'Cannot load recent errors. Check log storage and try again.');
+        }
+        return;
+      }
       if (readerRequest) {
         if (req.method !== 'GET') {
           res.setHeader('Allow', 'GET');
