@@ -1,0 +1,76 @@
+name: lan-loki-api
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  api:
+    image: lan-loki-api:local
+    build: .
+    restart: unless-stopped
+    init: true
+    ports:
+      - "${API_PORT:-3000}:3000"
+    volumes:
+      - api-logs:/var/log/node-api
+    logging: *logging
+
+  loki-init:
+    image: busybox:1.37.0
+    command: ["chown", "10001:10001", "/loki"]
+    volumes:
+      - loki-data:/loki
+    logging: *logging
+
+  loki:
+    image: grafana/loki:3.6.0
+    restart: unless-stopped
+    command: ["-config.file=/etc/loki/config.yaml"]
+    depends_on:
+      loki-init:
+        condition: service_completed_successfully
+    volumes:
+      - ./observability/loki.yaml:/etc/loki/config.yaml:ro
+      - loki-data:/loki
+    logging: *logging
+
+  alloy:
+    image: grafana/alloy:v1.11.0
+    restart: unless-stopped
+    command: ["run", "--storage.path=/var/lib/alloy/data", "--disable-reporting", "/etc/alloy/config.alloy"]
+    depends_on:
+      - api
+      - loki
+    volumes:
+      - ./observability/config.alloy:/etc/alloy/config.alloy:ro
+      - api-logs:/var/log/node-api:ro
+      - alloy-data:/var/lib/alloy/data
+    logging: *logging
+
+  grafana:
+    image: grafana/grafana:12.3.0
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Copy .env.example to .env and set GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    depends_on:
+      - loki
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    logging: *logging
+
+volumes:
+  api-logs:
+  loki-data:
+  alloy-data:
+  grafana-data:

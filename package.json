@@ -1,0 +1,13 @@
+{
+  "name": "lan-loki-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Three-endpoint Node.js API with Grafana, Loki and Alloy",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test"
+  }
+}
