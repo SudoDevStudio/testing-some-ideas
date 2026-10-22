@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log reader</title>
+  <link rel="stylesheet" href="/logs/style.css">
+  <script src="/logs/reader.js" defer></script>
+</head>
+<body>
+  <aside class="rail" aria-label="Application"><div class="brand" title="Log reader">l<span>o</span>g<span class="brand-dot">.</span></div><div class="rail-icon" aria-label="Logs">≡</div><span class="rail-bottom">LAN</span></aside>
+  <main>
+    <header><div><div class="eyebrow">YOUR APPLICATION, IN REAL TIME</div><h1>Log explorer<span class="service">node-api</span></h1></div><button id="sample" class="secondary">＋ Generate test logs</button></header>
+    <section class="toolbar" aria-label="Log controls">
+      <label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Search messages, paths, request IDs…" aria-label="Search logs"><kbd>/</kbd></label>
+      <select id="range" aria-label="Time range"><option value="15m">Last 15 minutes</option><option value="1h">Last hour</option><option value="24h">Last 24 hours</option></select>
+      <button id="live" class="live" aria-pressed="true"><span class="pulse"></span><span id="live-label">Live</span></button>
+      <button id="refresh" class="secondary refresh" aria-label="Refresh logs" title="Refresh logs">↻</button>
+    </section>
+    <div id="connection-error" class="connection-error" role="alert" hidden></div>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <section class="overview" aria-label="Log summary"><div class="stat"><span>LOGS</span><strong id="total">—</strong><small>in current view</small></div><div class="stat"><span>ERRORS</span><strong id="errors" class="error-count">—</strong><small>HTTP 500 and above</small></div><div class="activity"><div class="activity-heading"><span>ACTIVITY</span><span id="period">Last 15 minutes</span></div><div id="histogram" class="histogram" aria-label="Log activity over time"></div></div></section>
+    <section class="log-panel">
+      <div class="filterbar"><div class="tabs" role="group" aria-label="Filter severity"><button data-level="all" class="selected" aria-pressed="true">All logs <span id="all-count">0</span></button><button data-level="error" aria-pressed="false">Errors <span id="error-count">0</span></button><button data-level="info" aria-pressed="false">Info <span id="info-count">0</span></button></div><select id="endpoint" aria-label="Filter endpoint"><option value="all">All endpoints</option><option>/users</option><option>/products</option><option>/orders</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th scope="col">TIME</th><th scope="col">LEVEL</th><th scope="col">STATUS</th><th scope="col">ENDPOINT</th><th scope="col">MESSAGE</th><th scope="col" class="duration">DURATION</th></tr></thead><tbody id="rows"></tbody></table><div id="empty" class="empty" hidden><span class="empty-symbol">≡</span><h2 id="empty-title">Waiting for logs</h2><p id="empty-message">Send an API request or generate test logs to get started.</p></div></div>
+      <footer><span id="result-count">Connecting…</span><span id="updated" role="status">Updates every 2 seconds</span></footer>
+    </section>
+    <p class="hint">Select a log to inspect its request details and error stack. <span id="session-note" hidden>Local mode: showing this server session only.</span></p>
+  </main>
+  <dialog id="details" aria-labelledby="detail-title"><div class="detail-heading"><div><div class="eyebrow">LOG DETAILS</div><h2 id="detail-title">Request details</h2></div><button id="close-details" class="secondary" aria-label="Close details">✕</button></div><div id="detail-summary"></div><h3>Attributes</h3><dl id="attributes"></dl><section id="stack-section" hidden><h3>Error stack</h3><pre id="stack"></pre></section><h3>Raw JSON</h3><pre id="raw"></pre></dialog>
+</body>
+</html>

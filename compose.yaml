@@ -12,6 +12,8 @@ services:
     build: .
     restart: unless-stopped
     init: true
+    environment:
+      LOKI_URL: http://loki:3100
     ports:
       - "${API_PORT:-3000}:3000"
     volumes:

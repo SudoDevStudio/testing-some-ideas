@@ -1,5 +1,14 @@
 import { createServer } from 'node:http';
 import { randomInt, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { createLogReader } from './log-reader.js';
+
+const assets = new Map([
+  ['/', ['index.html', 'text/html; charset=utf-8']],
+  ['/logs', ['index.html', 'text/html; charset=utf-8']],
+  ['/logs/style.css', ['style.css', 'text/css; charset=utf-8']],
+  ['/logs/reader.js', ['reader.js', 'text/javascript; charset=utf-8']],
+].map(([path, [file, type]]) => [path, { content: readFileSync(new URL(`./public/${file}`, import.meta.url)), type }]));
 
 const pick = (items) => items[randomInt(items.length)];
 const routes = {
@@ -16,16 +25,19 @@ class HttpError extends Error {
   }
 }
 
-export function createApp({ log = () => {} } = {}) {
-  return createServer((req, res) => {
+export function createApp({ log = () => {}, readLogs = createLogReader() } = {}) {
+  return createServer(async (req, res) => {
     const started = performance.now();
     const requestId = randomUUID();
     let path = '/';
     let caughtError;
+    let readerRequest = false;
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('X-Request-Id', requestId);
     res.setHeader('Cache-Control', 'no-store');
     res.once('finish', () => {
+      // Watching the reader must not create more application logs.
+      if (readerRequest) return;
       log({
         level: res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
         message: caughtError ? caughtError.message : 'Request completed',
@@ -39,6 +51,27 @@ export function createApp({ log = () => {} } = {}) {
     try {
       const url = new URL(req.url, 'http://localhost');
       path = url.pathname;
+      readerRequest = assets.has(path) || path === '/logs/data';
+      if (readerRequest) {
+        if (req.method !== 'GET') {
+          res.setHeader('Allow', 'GET');
+          throw new HttpError(405, 'Only GET is supported');
+        }
+        if (path === '/logs/data') {
+          try {
+            res.end(JSON.stringify(await readLogs(url.searchParams.get('range') || '15m')));
+          } catch (error) {
+            throw new HttpError(error.status === 400 ? 400 : 503, error.status === 400 ? error.message : 'Cannot reach log storage. Retrying automatically.');
+          }
+        } else {
+          const asset = assets.get(path);
+          res.setHeader('Content-Type', asset.type);
+          res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+          res.setHeader('X-Content-Type-Options', 'nosniff');
+          res.end(asset.content);
+        }
+        return;
+      }
       if (!Object.hasOwn(routes, path)) throw new HttpError(404, 'Endpoint not found');
       if (req.method !== 'GET') {
         res.setHeader('Allow', 'GET');

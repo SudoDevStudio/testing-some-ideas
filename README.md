@@ -2,6 +2,18 @@
 
 A dependency-free Node.js API with three GET endpoints, real thrown errors, structured JSON logs, and a ready-to-use Grafana dashboard.
 
+## Simple log reader
+
+Open **http://localhost:3000** (or `http://YOUR-LAN-IP:3000`) for the built-in log reader. No Grafana login or query language is needed.
+
+- Logs refresh every two seconds; use **Live** to pause or resume.
+- Search messages, request IDs, HTTP statuses, or paths.
+- Filter errors, endpoint, and time range (15 minutes, one hour, or 24 hours).
+- Click a message to see request attributes, JSON, and its error stack.
+- Click **Generate test logs** to send a 200, 500, and 503 request.
+
+The reader shows the latest 500 logs in the selected period; search and filters apply to those loaded records. In Compose it reads persistent logs from Loki. When running Node alone, it shows the latest 500 logs from the current server session. Viewing and polling the reader do not generate application request logs. The reader is available without authentication to devices that can reach the API on your trusted LAN, and shows the same application logs and error details you would see in Grafana.
+
 ## Run everything
 
 Install Docker with the Compose plugin, then from this directory:
@@ -14,6 +26,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+- Log reader: http://localhost:3000
 - API: http://localhost:3000/users
 - Grafana: http://localhost:3001 — log in with `admin` and the password from `.env`.
 - Open **Dashboards → Node API → Node API overview**.
