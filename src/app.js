@@ -3,6 +3,7 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createLogReader } from './log-reader.js';
 import { createEventPusher, PushEventError, readJsonRequest } from './push-event.js';
+import { getProducts } from './products.js';
 
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
@@ -16,6 +17,7 @@ const assets = new Map([
 
 const pick = (items) => items[randomInt(items.length)];
 const routes = {
+  '/get-data': getProducts,
   '/users': () => ({ id: randomUUID(), name: pick(['Alex', 'Sam', 'Jordan', 'Taylor']), online: Boolean(randomInt(2)) }),
   '/products': () => ({ id: randomUUID(), name: pick(['Keyboard', 'Monitor', 'Headphones']), price: randomInt(1000, 30000) / 100, currency: 'USD', stock: randomInt(100) }),
   '/orders': () => ({ id: randomUUID(), status: pick(['pending', 'shipped', 'delivered']), total: randomInt(1000, 50000) / 100, currency: 'USD', items: randomInt(1, 6) }),
