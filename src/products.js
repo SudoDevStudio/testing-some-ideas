@@ -8,6 +8,6 @@ const products = [
 export function getProducts() {
   return products.map((product) => ({
     ...product,
-    price: Number(Number(product.price).toFixed(2)),
+    price: Number(product.price.toFixed(2)),
   }));
 }
