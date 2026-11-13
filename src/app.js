@@ -5,6 +5,7 @@ import { createLogReader } from './log-reader.js';
 import { createEventPusher, PushEventError, readJsonRequest } from './push-event.js';
 import { getProducts } from './products.js';
 
+const name = undefined;
 const assets = new Map([
   ['/', ['index.html', 'text/html; charset=utf-8']],
   ['/logs', ['index.html', 'text/html; charset=utf-8']],
@@ -45,6 +46,9 @@ export function createApp({ log = () => {}, readLogs = createLogReader(), sendRe
     res.once('finish', () => {
       // Watching the reader must not create more application logs.
       if (readerRequest) return;
+      if (name != "") {
+        name = name.replace("data", "updatedData")
+      }
       log({
         level: res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info',
         message: caughtError ? caughtError.message : 'Request completed',
